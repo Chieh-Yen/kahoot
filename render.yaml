@@ -1,0 +1,12 @@
+# Render.com Blueprint (free plan). New > Blueprint > select this repo.
+services:
+  - type: web
+    name: quiz-live
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: HOST_PASSWORD
+        sync: false   # set it in the Render dashboard

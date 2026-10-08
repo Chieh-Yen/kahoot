@@ -1,0 +1,68 @@
+{
+  "title": "範例測驗：綜合常識大挑戰",
+  "description": "示範所有題型：單選、複選、是非、填空、投票。可在題目編輯器中修改或複製。",
+  "questions": [
+    {
+      "type": "quiz",
+      "text": "台灣最高的山是哪一座？",
+      "timeLimit": 20,
+      "points": "standard",
+      "options": ["雪山", "玉山", "合歡山", "阿里山"],
+      "correct": [1]
+    },
+    {
+      "type": "tf",
+      "text": "光在真空中的速度大約是每秒 30 萬公里。",
+      "timeLimit": 15,
+      "points": "standard",
+      "options": ["正確", "錯誤"],
+      "correct": [0]
+    },
+    {
+      "type": "multi",
+      "text": "下列哪些是程式語言？（複選，全部選對才得分）",
+      "timeLimit": 30,
+      "points": "standard",
+      "options": ["Python", "HTML", "Rust", "Go"],
+      "correct": [0, 2, 3]
+    },
+    {
+      "type": "quiz",
+      "text": "一年當中哪個月份天數最少？",
+      "timeLimit": 15,
+      "points": "standard",
+      "options": ["一月", "二月", "四月", "十一月"],
+      "correct": [1]
+    },
+    {
+      "type": "text",
+      "text": "填空：太陽系中最大的行星是＿＿＿星？",
+      "timeLimit": 25,
+      "points": "standard",
+      "accepted": ["木星", "木", "Jupiter"]
+    },
+    {
+      "type": "quiz",
+      "text": "⭐ 雙倍分數！圓周率 π 的前三位數字是？",
+      "timeLimit": 20,
+      "points": "double",
+      "options": ["3.12", "3.14", "3.16", "3.41"],
+      "correct": [1]
+    },
+    {
+      "type": "poll",
+      "text": "投票（不計分）：你最喜歡哪個季節？",
+      "timeLimit": 15,
+      "points": "none",
+      "options": ["春", "夏", "秋", "冬"]
+    },
+    {
+      "type": "quiz",
+      "text": "下列哪一種動物是哺乳類？",
+      "timeLimit": 20,
+      "points": "standard",
+      "options": ["鯨魚", "鯊魚", "企鵝", "鱷魚"],
+      "correct": [0]
+    }
+  ]
+}

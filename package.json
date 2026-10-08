@@ -1,0 +1,24 @@
+{
+  "name": "kahoot-lite",
+  "version": "1.0.0",
+  "description": "Self-hosted Kahoot-style live quiz game for up to hundreds of players",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js",
+    "loadtest": "node scripts/loadtest.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.22.3",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  }
+}

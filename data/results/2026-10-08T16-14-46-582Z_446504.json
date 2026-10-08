@@ -1,0 +1,77 @@
+{
+  "pin": "446504",
+  "title": "阿椒明天去哪",
+  "finishedAt": "2026-10-08T16:14:46.582Z",
+  "questions": [
+    {
+      "text": "連假第一天",
+      "type": "quiz",
+      "options": [
+        "平溪",
+        "九份",
+        "淡水",
+        "家裏"
+      ],
+      "correct": [
+        0
+      ]
+    },
+    {
+      "text": "連假第二天",
+      "type": "quiz",
+      "options": [
+        "IKEA",
+        "裕隆城",
+        "桌遊展",
+        "家裏"
+      ],
+      "correct": [
+        0
+      ]
+    }
+  ],
+  "players": [
+    {
+      "rank": 1,
+      "name": "椒媽",
+      "score": 960,
+      "correctCount": 1,
+      "bestStreak": 1,
+      "history": [
+        {
+          "choice": 3,
+          "elapsed": 1035,
+          "correct": false,
+          "points": 0
+        },
+        {
+          "choice": 0,
+          "elapsed": 1605,
+          "correct": true,
+          "points": 960
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "name": "椒鹽爸",
+      "score": 864,
+      "correctCount": 1,
+      "bestStreak": 1,
+      "history": [
+        {
+          "choice": 0,
+          "elapsed": 5451,
+          "correct": true,
+          "points": 864
+        },
+        {
+          "choice": 2,
+          "elapsed": 986,
+          "correct": false,
+          "points": 0
+        }
+      ]
+    }
+  ]
+}

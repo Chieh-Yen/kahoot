@@ -119,6 +119,13 @@
 
   function showLogin(msg) {
     primary = null;
+    if (info.passwordMissing) {
+      setScreen(h('div', { class: 'center' }, h('div', { class: 'card', style: { maxWidth: '520px' } },
+        h('h2', { style: { marginTop: 0 } }, '尚未設定主持人密碼'),
+        h('p', null, '這個伺服器跑在 Render 上，但還沒有設定 HOST_PASSWORD。為了避免任何人都能修改或刪除你的測驗，主持功能已暫停。'),
+        h('p', null, '請到 Render → 你的服務 → Environment，新增 HOST_PASSWORD，儲存後會自動重新部署。'))));
+      return;
+    }
     const input = h('input', { class: 'input', type: 'password', placeholder: '主持人密碼', autocomplete: 'current-password' });
     setScreen(h('div', { class: 'center' },
       h('div', { class: 'logo' }, 'Quiz', h('span', null, 'Live')),
@@ -149,9 +156,14 @@
     let quizzes;
     try {
       quizzes = await api('/api/quizzes');
+      const restored = await K.QuizBackup.restoreMissing(quizzes, password);
+      if (restored) {
+        quizzes = await api('/api/quizzes');
+        toast(`已從這台電腦的備份還原 ${restored} 份測驗`, 'success', 4000);
+      }
     } catch (e) {
-      if (e.auth) return showLogin(password ? '密碼錯誤，請重新輸入' : '');
-      return toast(e.message, 'error');
+      if (e.auth || info.passwordMissing) return showLogin(password ? '密碼錯誤，請重新輸入' : '');
+      return toast(e.message, 'error', 8000);
     }
 
     const grid = h('div', { class: 'quiz-grid' });
@@ -203,6 +215,8 @@
 
   async function startGame(quizId, btn) {
     Sound.ensure();
+    // Back up the quiz we are about to play, so a server restart can't lose it.
+    api('/api/quizzes/' + encodeURIComponent(quizId)).then((doc) => K.QuizBackup.save(doc)).catch(() => {});
     if (btn) btn.disabled = true;
     const r = await emit(socket, 'host:create', { quizId, settings, password });
     if (btn) btn.disabled = false;
@@ -225,6 +239,7 @@
   // ---------------- socket ----------------
 
   socket.on('connect', async () => {
+    await infoReady;
     if (session) {
       const r = await emit(socket, 'host:resume', session);
       if (!r.error) return;
@@ -258,6 +273,7 @@
   }
 
   function leaveScreen() {
+    K.applyTextSize(app, state && state.question);
     countdown.stop();
     clearLater();
     ring = null;
@@ -627,10 +643,10 @@
   }
 
   // ---------------- boot ----------------
-  (async () => {
-    try {
-      info = await (await fetch('/api/info')).json();
-    } catch {}
-    // The socket 'connect' handler drives the rest (resume or setup).
-  })();
+  K.keepServerAwake();
+  // The socket 'connect' handler waits for this, then drives the rest (resume or setup).
+  var infoReady = fetch('/api/info')
+    .then((r) => r.json())
+    .then((i) => (info = i))
+    .catch(() => {});
 })();

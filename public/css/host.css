@@ -153,3 +153,23 @@ body { overflow-y: auto; }
   .results { grid-template-columns: 1fr; }
   .chart { gap: 8px; }
 }
+
+/* ---------- wordy questions (e.g. clinical cases) ---------- */
+.long .q-head { font-size: clamp(20px, 2.3vw, 32px); padding: 12px 24px; }
+.xlong .q-head { font-size: clamp(18px, 1.75vw, 26px); }
+.long .q-meta { padding-top: 6px; }
+.long .q-mid { padding: 6px 26px; gap: 10px; }
+.long .timer-ring { width: 96px !important; height: 96px !important; }
+.long .timer-ring .num { font-size: 32px; }
+.long .answered-count { font-size: 42px; }
+.long .q-media .type-hint { font-size: 22px; }
+.long .q-media img { max-height: 24vh; min-height: 0; }
+.long .chart { height: 20vh !important; min-height: 110px; }
+.long .bar .n { font-size: 22px; }
+.long .tiles { gap: 8px; }
+.long .tile { font-size: clamp(16px, 1.65vw, 24px); min-height: 64px; padding: 10px 16px; gap: 12px; line-height: 1.3; }
+.long .tile .shape { font-size: 28px; }
+.long .tile .tick { font-size: 30px; }
+.xlong .tile { font-size: clamp(15px, 1.5vw, 22px); }
+.long .intro .text { font-size: clamp(24px, 3vw, 44px); }
+.xlong .intro .text { font-size: clamp(22px, 2.5vw, 36px); line-height: 1.3; }

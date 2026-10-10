@@ -1,0 +1,158 @@
+{
+  "title": "Assessing Fitness to Travel: Practical Cases in Air Travel and Chronic Disease Management",
+  "description": "Case-based quiz (Q1–Q10) covering COPD and hypoxia testing, post-MI/PCI air travel, and the multi-morbid traveller. Source: lecture slides, 2026-10-16.",
+  "questions": [
+    {
+      "type": "quiz",
+      "text": "Case 1 — COPD: A 68-year-old man with severe COPD (FEV₁ 38% predicted), not on home O₂, breathless after two flights of stairs, last exacerbation 8 weeks ago, resting SpO₂ 93%, plans a 9-hour flight. What is the most appropriate next step in assessing his fitness to fly?",
+      "timeLimit": 45,
+      "points": "standard",
+      "options": [
+        "Fit to fly without further assessment, because resting SpO₂ is >90%",
+        "Prescribe in-flight oxygen immediately, because FEV₁ is <40% predicted",
+        "Detailed pre-flight assessment (resting SpO₂, functional capacity) and consider formal hypoxia testing",
+        "Repeat spirometry now and base the decision primarily on the current FEV₁"
+      ],
+      "correct": [
+        2
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "Case 1 — COPD (cont.): Which feature in this patient most strongly supports proceeding to formal hypoxia testing before a long-haul flight?",
+      "timeLimit": 30,
+      "points": "standard",
+      "options": [
+        "Age of 68 years alone",
+        "Former smoking history",
+        "FEV₁ 38% predicted with resting SpO₂ 93% on room air",
+        "Not currently using home oxygen"
+      ],
+      "correct": [
+        2
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "Case 1 — COPD (cont.): His hypoxic challenge test gives PaO₂ 7.0 kPa (53 mmHg) with SpO₂ 82%, and he remains clinically stable. What is the most appropriate management?",
+      "timeLimit": 45,
+      "points": "standard",
+      "options": [
+        "No special arrangement is needed, because PaO₂ remains >50 mmHg",
+        "Recommend in-flight supplemental oxygen and arrange the airline's oxygen requirements in advance",
+        "Cancel all air travel permanently, because the HCT is abnormal",
+        "Start long-term home oxygen before the trip as soon as possible"
+      ],
+      "correct": [
+        1
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "Cardiovascular disease: A 55-year-old had an uncomplicated STEMI treated with successful primary PCI, preserved EF and no arrhythmia. He wants the earliest reasonable date to take a 2-hour flight. What do you advise?",
+      "timeLimit": 30,
+      "points": "standard",
+      "options": [
+        "He should never fly again",
+        "From about 3 days (many clinicians advise 7–10 days)",
+        "Only after 3 months",
+        "Only after a normal exercise stress test, which is mandatory"
+      ],
+      "correct": [
+        1
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "Case 2 — Recent NSTEMI: A 60-year-old woman had an NSTEMI 5 days ago (drug-eluting stent to the LAD, EF 45%, no arrhythmia or heart failure, on DAPT) and is booked on a 13-hour flight on day 9. What is the most important consideration in deciding whether she can fly?",
+      "timeLimit": 45,
+      "points": "standard",
+      "options": [
+        "The fact that she is receiving dual antiplatelet therapy",
+        "Whether the MI and PCI have been clinically uncomplicated and she is stable",
+        "Whether her EF has returned to ≥55%",
+        "Whether she has been discharged from hospital for at least 7 days"
+      ],
+      "correct": [
+        1
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "Case 2 — Recent NSTEMI (cont.): What additional concern is particularly relevant because this is a 13-hour long-haul flight?",
+      "timeLimit": 30,
+      "points": "standard",
+      "options": [
+        "Increased risk of venous thromboembolism (VTE) and the challenges of prolonged immobility",
+        "Increased risk of acute stent thrombosis caused directly by cabin pressure",
+        "A predictable reduction in EF caused by the lower cabin oxygen concentration",
+        "Loss of antiplatelet effect caused by prolonged exposure to cabin altitude"
+      ],
+      "correct": [
+        0
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "Case 2 — Recent NSTEMI (cont.): Before completing the airline's MEDIF, which finding would most strongly support advising her to postpone the flight?",
+      "timeLimit": 45,
+      "points": "standard",
+      "options": [
+        "Clinically stable, no chest pain or heart failure, and walks without significant symptoms",
+        "She is taking DAPT following implantation of a drug-eluting stent",
+        "Persistent/recurrent chest pain, decompensated heart failure, or another sign of ongoing cardiac instability",
+        "EF 45% with no symptoms or clinical evidence of heart failure"
+      ],
+      "correct": [
+        2
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "Case 3 — Multi-morbid traveller: A 72-year-old woman (insulin-treated type 2 diabetes, stable HF NYHA II, DVT 3 years ago) had an uncomplicated laparoscopic cholecystectomy 6 days ago and plans an 11-hour flight across 7 time zones in 3 days. Which best summarizes the key issues before clearance?",
+      "timeLimit": 60,
+      "points": "standard",
+      "options": [
+        "Recent surgery and advanced age are the main concerns; diabetes and heart failure are unlikely to matter",
+        "Glycemic control is the main concern; her previous DVT is too remote to be clinically relevant",
+        "Recent surgery, previous DVT, insulin-treated diabetes, stable heart failure and prolonged travel all matter",
+        "Surgery was uncomplicated and heart failure is stable, so no additional assessment is necessary"
+      ],
+      "correct": [
+        2
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "Case 3 — Multi-morbid traveller (cont.): She will be 9 days post-laparoscopic cholecystectomy on the day of departure. Which statement is most appropriate?",
+      "timeLimit": 45,
+      "points": "standard",
+      "options": [
+        "Any flight within 2 weeks of abdominal surgery is contraindicated",
+        "Timing may be acceptable after uncomplicated laparoscopic surgery if she has recovered well, without complications",
+        "Postpone until at least 6 weeks after surgery because of the risk of wound dehiscence",
+        "The flight is safe solely because laparoscopic surgery does not affect fitness to fly"
+      ],
+      "correct": [
+        1
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "Case 3 — Multi-morbid traveller (cont.): Before completing the airline's medical form, which is the most appropriate plan for this patient?",
+      "timeLimit": 60,
+      "points": "standard",
+      "options": [
+        "Usual insulin unchanged, oral hydration, and compression stockings only, as her DVT was 3 years ago",
+        "Time-zone-adjusted insulin/glucose plan, individualised VTE-prophylaxis assessment, confirm recovery and airline plans",
+        "Hold insulin on the travel day; use aspirin for VTE prophylaxis, as anticoagulation is unnecessary",
+        "Delay until a full 6-week recovery regardless of clinical status; restart usual medications on arrival"
+      ],
+      "correct": [
+        1
+      ]
+    }
+  ],
+  "id": "fitness-to-travel-20261016",
+  "updatedAt": "2026-10-10T06:46:16.516Z"
+}

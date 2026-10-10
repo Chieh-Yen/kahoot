@@ -222,6 +222,7 @@
       return;
     }
     renderedKey = key;
+    K.applyTextSize(app, state.question);
     countdown.stop();
     switch (state.phase) {
       case 'lobby': return renderLobby();
@@ -265,7 +266,7 @@
       topBar(false),
       h('div', { class: 'center' },
         h('div', { class: 'sub' }, `第 ${state.qIndex + 1} 題`),
-        h('div', { class: 'headline pop' }, q.text || '準備好了嗎？'),
+        h('div', { class: 'headline pop intro-q' }, q.text || '準備好了嗎？'),
         h('div', { class: 'pill' }, TYPE_LABEL[q.type] + (q.points === 'double' ? ' · ⭐ 雙倍分數' : '')),
         h('div', { class: 'progress getready-bar' }, h('i'))
       ),

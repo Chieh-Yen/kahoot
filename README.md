@@ -40,12 +40,30 @@ cloudflared tunnel --url http://localhost:3000
 
 ## 部署到免費雲端（Render）
 
-1. 把這個資料夾推到 GitHub。
-2. Render.com → New → Blueprint → 選這個 repo（會讀 `render.yaml`）。
-3. 在 Render 設定環境變數 `HOST_PASSWORD`。
+1. 把程式推到 GitHub（`data/quizzes/` 也一起 commit，部署時會帶上去）。
+2. Render.com → **New → Blueprint** → 選這個 repo（會讀 `render.yaml`，區域預設新加坡）。
+3. 建立時會要求填 `HOST_PASSWORD`（主持人與編輯器密碼）。沒設定的話主持功能會停用，避免任何人都能改你的題目。
+4. 完成後網址類似 `https://quiz-live.onrender.com`；開 `/host` 主持，大廳的 QR Code 會自動使用這個網址。之後每次 push 會自動重新部署。
 
-注意：免費方案閒置 15 分鐘會休眠（下次開啟需等 ~1 分鐘喚醒，開場前先打開一次 `/host`），而且**重新部署/重啟後硬碟會清空**，自建的測驗請用編輯器「匯出 JSON」備份，或把 JSON 放進 `samples/` 資料夾（資料夾空的時候啟動會自動匯入）。
-也附有 `Dockerfile`，可部署到任何支援 Docker + WebSocket 的平台。遊戲狀態存在記憶體中，請只跑**單一實例**。
+免費方案的限制，以及程式的對應方式：
+
+| 限制 | 對應方式 |
+|---|---|
+| 重啟/重新部署/休眠後硬碟清空 | ① git 裡的 `data/quizzes/` 每次部署都會帶上；② 你在網頁上開過或存過的測驗會備份在瀏覽器（IndexedDB），伺服器少了時，打開主持人頁或編輯器會自動還原 |
+| 閒置 15 分鐘休眠，喚醒約需 1 分鐘 | 開場前幾分鐘先打開 `/host`；主持人頁與編輯器開著時每 4 分鐘自動 ping，遊戲中不會休眠 |
+| 0.1 CPU、512 MB 記憶體 | 實測 100 人一整場只用約 1 秒 CPU、55 MB 記憶體，見下方「上場前彩排」 |
+
+> 在其他電腦或清除瀏覽器資料後，瀏覽器備份就不在了。重要的測驗請在編輯器「匯出 JSON」，或在本機編輯後 commit 進 `data/quizzes/`。
+
+### 上場前彩排（強烈建議）
+
+部署後在自己電腦執行，用 100 個機器人實際打一場線上遊戲：
+
+```bash
+node scripts/loadtest.js --url https://你的網址.onrender.com --password 你的密碼 --players 100 --polling 1 --all-answer 1
+```
+
+看到 `PASS ✓` 且延遲在可接受範圍就沒問題（機器人遊戲結束後會自動關閉）。
 
 ## 環境變數
 
@@ -53,7 +71,7 @@ cloudflared tunnel --url http://localhost:3000
 |---|---|---|
 | `PORT` | 監聽 port | `3000` |
 | `HOST_PASSWORD` | 主持人/編輯器密碼。公開部署時務必設定 | 無（任何人可進編輯器） |
-| `PUBLIC_URL` | 強制大廳顯示的加入網址，例如 `https://quiz.example.com` | 自動偵測 |
+| `PUBLIC_URL` | 強制大廳顯示的加入網址，例如 `https://quiz.example.com` | Render 上自動使用 `RENDER_EXTERNAL_URL` |
 | `DATA_DIR` | 測驗與成績存放位置 | `./data` |
 
 測驗存在 `data/quizzes/*.json`，每場遊戲的成績會自動存到 `data/results/`。

@@ -64,3 +64,13 @@
 .rank-big { font-size: 64px; font-weight: 900; line-height: 1; }
 
 .getready-bar { width: min(80vw, 360px); }
+
+/* ---------- wordy questions ---------- */
+.long .qtext { font-size: 16px; line-height: 1.35; padding: 10px 12px 2px; }
+.xlong .qtext { font-size: 14.5px; }
+.long .answers { gap: 8px; padding: 8px; overflow-y: auto; }
+.long .ans-btn { font-size: 14.5px; min-height: 60px; padding: 8px 10px; gap: 4px; line-height: 1.25; }
+.xlong .ans-btn { font-size: 13.5px; }
+.long .ans-btn.has-text .shape { font-size: 20px; }
+.long .intro-q { font-size: 20px; line-height: 1.35; }
+.xlong .intro-q { font-size: 17px; }

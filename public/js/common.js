@@ -361,8 +361,83 @@
     if (document.visibilityState === 'visible' && window.__wantWake) keepAwake();
   });
 
+  // ---------------- Quiz backup (IndexedDB) ----------------
+  // Free hosts (Render) wipe their disk on every restart. Each quiz the host opens or saves is
+  // mirrored here, and re-uploaded automatically when the server no longer has it.
+  const QuizBackup = {
+    dbp: null,
+    open() {
+      if (!this.dbp) {
+        this.dbp = new Promise((res, rej) => {
+          const r = indexedDB.open('quizlive', 1);
+          r.onupgradeneeded = () => r.result.createObjectStore('quizzes', { keyPath: 'id' });
+          r.onsuccess = () => res(r.result);
+          r.onerror = () => rej(r.error);
+        });
+      }
+      return this.dbp;
+    },
+    async tx(mode, fn) {
+      const db = await this.open();
+      return new Promise((res, rej) => {
+        const t = db.transaction('quizzes', mode);
+        const req = fn(t.objectStore('quizzes'));
+        t.oncomplete = () => res(req && req.result);
+        t.onerror = () => rej(t.error);
+      });
+    },
+    save(doc) {
+      if (!doc || !doc.id) return Promise.resolve();
+      return this.tx('readwrite', (s) => s.put(doc)).catch(() => {});
+    },
+    remove(id) {
+      return this.tx('readwrite', (s) => s.delete(id)).catch(() => {});
+    },
+    all() {
+      return this.tx('readonly', (s) => s.getAll()).catch(() => []);
+    },
+    /** Upload backups the server is missing (or has an older copy of). Returns how many were restored. */
+    async restoreMissing(serverList, password) {
+      const byId = new Map(serverList.map((q) => [q.id, q]));
+      let n = 0;
+      for (const doc of await this.all()) {
+        const s = byId.get(doc.id);
+        if (s && !(doc.updatedAt && s.updatedAt && doc.updatedAt > s.updatedAt)) continue;
+        try {
+          const r = await fetch('/api/quizzes/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-host-password': password || '' },
+            body: JSON.stringify(doc),
+          });
+          if (r.ok && (await r.json()).restored) n++;
+        } catch {}
+      }
+      return n;
+    },
+  };
+
+  /** Keep a free-tier server awake while this page is open (Render sleeps after 15 idle minutes). */
+  function keepServerAwake() {
+    setInterval(() => fetch('/healthz', { cache: 'no-store' }).catch(() => {}), 4 * 60 * 1000);
+  }
+
+  /** 'long' / 'xlong' size class for wordy questions, so text-heavy (e.g. clinical case) quizzes still fit one screen. */
+  function textSize(q) {
+    if (!q) return '';
+    const t = [...(q.text || '')].length;
+    const o = Math.max(0, ...(q.options || []).map((x) => [...(x || '')].length));
+    if (t > 220 || o > 90) return 'xlong';
+    if (t > 120 || o > 50) return 'long';
+    return '';
+  }
+  function applyTextSize(el, q) {
+    const s = textSize(q);
+    el.classList.toggle('long', !!s);
+    el.classList.toggle('xlong', s === 'xlong');
+  }
+
   const TYPE_LABEL = { quiz: '單選題', multi: '複選題', tf: '是非題', text: '填空題', poll: '投票' };
   const AVATARS = ['🦊', '🐼', '🐸', '🐵', '🦁', '🐯', '🐨', '🐙', '🦄', '🐧', '🐳', '🦖', '🐝', '🦉', '🐹', '🐰', '🐶', '🐱', '🦋', '🐢', '🦀', '🐲', '🦜', '🐮'];
 
-  window.K = { $, $$, h, shape, storage, toast, fmt, emit, connBanner, Sound, confetti, Countdown, timerRing, keepAwake, TYPE_LABEL, AVATARS };
+  window.K = { applyTextSize, QuizBackup, keepServerAwake, $, $$, h, shape, storage, toast, fmt, emit, connBanner, Sound, confetti, Countdown, timerRing, keepAwake, TYPE_LABEL, AVATARS };
 })();

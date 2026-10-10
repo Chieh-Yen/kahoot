@@ -14,6 +14,9 @@ const URL = args.url || 'http://localhost:3000';
 const N = parseInt(args.players || '100', 10);
 const PASSWORD = args.password || process.env.HOST_PASSWORD || '';
 const ALL_ANSWER = 'all-answer' in args; // every bot answers -> questions end early
+// Browsers start with HTTP long-polling and then upgrade; --polling mimics that (more server work).
+const TRANSPORTS = 'polling' in args ? ['polling', 'websocket'] : ['websocket'];
+const serverCpu = async () => (await (await fetch(URL + '/healthz')).json());
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const ack = (s, ev, data) => new Promise((res) => s.timeout(10000).emit(ev, data, (err, r) => res(err ? { error: 'timeout' } : r)));
@@ -35,16 +38,19 @@ async function main() {
   console.log(`game ${pin}: quiz "${quizzes[0].title}", connecting ${N} players…`);
 
   const errors = [];
+  let playerBytes = 0;
+  let hostBytes = 0;
   const latencies = [];
   let phaseSentAt = 0;
   let expectPhase = null;
   const bots = [];
 
+  const cpu0 = await serverCpu();
   const t0 = Date.now();
   await Promise.all(
     Array.from({ length: N }, async (_, i) => {
       await sleep(Math.random() * 1500); // spread joins like real people
-      const s = io(URL, { transports: ['websocket'], forceNew: true, reconnection: false });
+      const s = io(URL, { transports: TRANSPORTS, forceNew: true, reconnection: false });
       const bot = { i, s, states: [], answeredQ: new Set(), final: null };
       bots.push(bot);
       await new Promise((r, j) => {
@@ -52,6 +58,7 @@ async function main() {
         s.on('connect_error', j);
       });
       s.on('player:state', (st) => {
+        playerBytes += JSON.stringify(st).length;
         bot.states.push(st.phase);
         if (expectPhase && st.phase === expectPhase && phaseSentAt) latencies.push(Date.now() - phaseSentAt);
         if (st.phase === 'question' && !st.answered && !bot.answeredQ.has(st.qIndex)) {
@@ -75,12 +82,14 @@ async function main() {
       if (r.error) errors.push(`join bot${i}: ${r.error}`);
     })
   );
-  console.log(`${N} players joined in ${Date.now() - t0} ms`);
+  const cpu1 = await serverCpu();
+  console.log(`${N} players joined in ${Date.now() - t0} ms (server CPU ${(cpu1.cpuSec - cpu0.cpuSec).toFixed(2)} s)`);
 
   // Drive the game from the host side.
   let hostState = null;
   const phaseLog = [];
   host.on('host:state', (st) => {
+    hostBytes += JSON.stringify(st).length;
     hostState = st;
   });
   await sleep(500);
@@ -118,6 +127,7 @@ async function main() {
   await waitPhase(['podium']);
   await sleep(800);
   const gameMs = Date.now() - gameStart;
+  const cpu2 = await serverCpu();
 
   // ---- verification ----
   const ranking = hostState.ranking;
@@ -139,8 +149,10 @@ async function main() {
 
   phaseLog.forEach((l) => console.log('  ' + l));
   console.log(`top 3: ${ranking.slice(0, 3).map((r) => `${r.name}(${r.score})`).join(', ')}`);
-  console.log(`game played in ${(gameMs / 1000).toFixed(1)} s`);
+  console.log(`game played in ${(gameMs / 1000).toFixed(1)} s (server CPU ${(cpu2.cpuSec - cpu1.cpuSec).toFixed(2)} s, RSS ${cpu2.rssMB} MB)`);
   console.log(`broadcast latency host:next -> player state: p50 ${pct(latencies, 50)} ms, p95 ${pct(latencies, 95)} ms, max ${Math.max(...latencies)} ms (${latencies.length} samples)`);
+
+  console.log(`payload: players received ${(playerBytes / 1024).toFixed(0)} KB total (${(playerBytes / N / 1024).toFixed(1)} KB per player), host received ${(hostBytes / 1024).toFixed(0)} KB`);
 
   const csv = await fetch(`${URL}/api/games/${pin}/results.csv?token=${created.hostToken}`);
   const text = await csv.text();

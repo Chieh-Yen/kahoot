@@ -58,11 +58,11 @@ class Store {
     return JSON.parse(fs.readFileSync(f, 'utf8'));
   }
 
-  saveQuiz(id, quiz) {
+  saveQuiz(id, quiz, updatedAt = null) {
     id = id || crypto.randomBytes(5).toString('hex');
     const f = this.file(id);
     if (!f) throw new Error('bad id');
-    const doc = { ...quiz, id, updatedAt: new Date().toISOString() };
+    const doc = { ...quiz, id, updatedAt: updatedAt || new Date().toISOString() };
     const tmp = f + '.' + process.pid + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(doc, null, 2));
     fs.renameSync(tmp, f);

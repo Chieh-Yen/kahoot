@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const express = require('express');
 const { Server } = require('socket.io');
 const QRCode = require('qrcode');
+const compression = require('compression');
 
 const { Game } = require('./src/game');
 const { normalizeQuiz } = require('./src/quiz');
@@ -14,7 +15,11 @@ const { Store } = require('./src/store');
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const HOST_PASSWORD = process.env.HOST_PASSWORD || '';
-const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
+// On Render, RENDER_EXTERNAL_URL (e.g. https://quiz-live.onrender.com) is set automatically.
+const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || '').replace(/\/+$/, '');
+const ON_RENDER = !!process.env.RENDER;
+// A public deployment without a password would let anyone edit or delete quizzes.
+const PASSWORD_MISSING = ON_RENDER && !HOST_PASSWORD;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const GAME_IDLE_MS = 6 * 60 * 60 * 1000;
 const ENDED_GAME_TTL_MS = 2 * 60 * 60 * 1000;
@@ -25,6 +30,7 @@ const games = new Map(); // pin -> Game
 // ---------- helpers ----------
 
 function checkPassword(pw) {
+  if (PASSWORD_MISSING) return false;
   if (!HOST_PASSWORD) return true;
   const a = crypto.createHash('sha256').update(String(pw || '')).digest();
   const b = crypto.createHash('sha256').update(HOST_PASSWORD).digest();
@@ -83,6 +89,7 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'same-origin');
   next();
 });
+app.use(compression());
 app.use(express.json({ limit: '30mb' }));
 
 const pub = path.join(__dirname, 'public');
@@ -95,13 +102,27 @@ app.get('/host', sendPage('host.html'));
 app.get('/editor', sendPage('editor.html'));
 app.use(express.static(pub, { maxAge: '1h', setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache') }));
 
-app.get('/healthz', (req, res) => res.json({ ok: true, games: games.size }));
+app.get('/healthz', (req, res) => {
+  let players = 0;
+  for (const g of games.values()) players += g.players.size;
+  const cpu = process.cpuUsage();
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({
+    ok: true,
+    games: games.size,
+    players,
+    rssMB: Math.round(process.memoryUsage().rss / 1048576),
+    cpuSec: +((cpu.user + cpu.system) / 1e6).toFixed(3),
+  });
+});
 
 app.get('/api/info', (req, res) => {
   res.json({
-    needPassword: !!HOST_PASSWORD,
+    needPassword: !!HOST_PASSWORD || PASSWORD_MISSING,
+    passwordMissing: PASSWORD_MISSING,
     publicUrl: PUBLIC_URL || null,
-    lanUrls: lanAddresses().map((ip) => `http://${ip}:${PORT}`),
+    // LAN addresses are meaningless (and confusing) once there is a public URL.
+    lanUrls: PUBLIC_URL ? [] : lanAddresses().map((ip) => `http://${ip}:${PORT}`),
   });
 });
 
@@ -118,11 +139,13 @@ app.get('/api/qr.svg', async (req, res) => {
 });
 
 function requireHost(req, res, next) {
+  if (PASSWORD_MISSING) return res.status(503).json({ error: '伺服器尚未設定 HOST_PASSWORD，請到 Render 的 Environment 設定後重新部署' });
   if (checkPassword(req.get('x-host-password'))) return next();
   res.status(401).json({ error: '主持人密碼錯誤' });
 }
 
 app.post('/api/auth', (req, res) => {
+  if (PASSWORD_MISSING) return res.status(503).json({ error: '伺服器尚未設定 HOST_PASSWORD，請到 Render 的 Environment 設定後重新部署' });
   if (checkPassword(req.body && req.body.password)) return res.json({ ok: true });
   res.status(401).json({ error: '密碼錯誤' });
 });
@@ -142,6 +165,21 @@ function saveHandler(req, res) {
   res.json(store.saveQuiz(req.params.id || null, quiz));
 }
 app.post('/api/quizzes', requireHost, saveHandler);
+
+// Re-upload a browser-side backup (after the free host wiped its disk). Keeps id and updatedAt;
+// only overwrites the server copy when the backup is newer.
+app.post('/api/quizzes/restore', requireHost, (req, res) => {
+  const body = req.body || {};
+  const id = String(body.id || '');
+  if (!store.file(id)) return res.status(400).json({ error: 'bad id' });
+  const { quiz, errors } = normalizeQuiz(body);
+  if (errors.length) return res.status(400).json({ error: errors[0], errors });
+  const updatedAt = typeof body.updatedAt === 'string' && !isNaN(Date.parse(body.updatedAt)) ? body.updatedAt : null;
+  const existing = store.getQuiz(id);
+  if (existing && (!updatedAt || String(existing.updatedAt) >= updatedAt)) return res.json({ ok: true, restored: false });
+  store.saveQuiz(id, quiz, updatedAt);
+  res.json({ ok: true, restored: true });
+});
 app.put('/api/quizzes/:id', requireHost, saveHandler);
 
 app.delete('/api/quizzes/:id', requireHost, (req, res) => {
@@ -363,7 +401,8 @@ if (require.main === module) {
     console.log(`  題目編輯 (Editor): http://localhost:${PORT}/editor`);
     for (const ip of lanAddresses()) console.log(`  玩家 (Players):   http://${ip}:${PORT}`);
     if (PUBLIC_URL) console.log(`  Public URL:       ${PUBLIC_URL}`);
-    if (!HOST_PASSWORD) console.log('  (未設定 HOST_PASSWORD：任何人都能開題目編輯器。公開部署時請設定。)');
+    if (PASSWORD_MISSING) console.log('  !!! 在 Render 上執行但沒有設定 HOST_PASSWORD：主持人與編輯器功能已停用，請到 Environment 設定。');
+    else if (!HOST_PASSWORD) console.log('  (未設定 HOST_PASSWORD：任何人都能開題目編輯器。公開部署時請設定。)');
     console.log('');
   });
 }

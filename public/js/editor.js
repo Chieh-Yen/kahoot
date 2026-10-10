@@ -120,12 +120,19 @@
 
   async function refreshList() {
     list = await api('/api/quizzes');
+    const restored = await K.QuizBackup.restoreMissing(list, password);
+    if (restored) {
+      list = await api('/api/quizzes');
+      toast(`已從這台電腦的備份還原 ${restored} 份測驗`, 'success', 4000);
+    }
   }
 
   async function open(id) {
     if (dirty && !confirm('有未儲存的變更，確定要離開？')) return;
     try {
-      quiz = toWorking(await api('/api/quizzes/' + encodeURIComponent(id)));
+      const doc = await api('/api/quizzes/' + encodeURIComponent(id));
+      K.QuizBackup.save(doc);
+      quiz = toWorking(doc);
       errors = [];
       setDirty(false);
       history.replaceState(null, '', '#' + id);
@@ -153,6 +160,7 @@
         ? await api('/api/quizzes/' + quiz.id, { method: 'PUT', body })
         : await api('/api/quizzes', { method: 'POST', body });
       quiz.id = doc.id;
+      K.QuizBackup.save(doc);
       errors = [];
       setDirty(false);
       history.replaceState(null, '', '#' + doc.id);
@@ -170,6 +178,7 @@
     if (!quiz.id) return newQuiz();
     if (!confirm(`確定要刪除「${quiz.title}」？此動作無法復原。`)) return;
     await api('/api/quizzes/' + quiz.id, { method: 'DELETE' });
+    await K.QuizBackup.remove(quiz.id);
     setDirty(false);
     quiz = null;
     await refreshList();
@@ -506,6 +515,7 @@
   }
 
   // ---------------- boot ----------------
+  K.keepServerAwake();
   (async () => {
     try {
       await refreshList();

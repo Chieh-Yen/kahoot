@@ -1,12 +1,15 @@
-# Render.com Blueprint (free plan). New > Blueprint > select this repo.
+# Render.com Blueprint (free plan).  Render dashboard → New → Blueprint → pick this repo.
+# You will be asked for HOST_PASSWORD during setup; without it hosting/editing stays disabled.
 services:
   - type: web
     name: quiz-live
     runtime: node
     plan: free
+    region: singapore          # closest Render region to Taiwan
     buildCommand: npm ci --omit=dev
     startCommand: node server.js
     healthCheckPath: /healthz
+    autoDeploy: true
     envVars:
       - key: HOST_PASSWORD
-        sync: false   # set it in the Render dashboard
+        sync: false

@@ -494,7 +494,7 @@
         const isC = (q.correct || []).includes(oi);
         return h('div', { class: 'opt-row' + (isC && q.type !== 'poll' ? ' is-correct' : '') },
           h('span', { class: `sw ans-${oi}` }, shape(oi)),
-          h('input', { class: 'ed-input', placeholder: oi < 2 ? `選項 ${oi + 1}` : `選項 ${oi + 1}（選填）`, maxlength: 120, value: o, oninput: (e) => { q.options[oi] = e.target.value; setDirty(); } }),
+          h('input', { class: 'ed-input', placeholder: oi < 2 ? `選項 ${oi + 1}` : `選項 ${oi + 1}（選填）`, maxlength: 250, value: o, oninput: (e) => { q.options[oi] = e.target.value; setDirty(); } }),
           q.type === 'poll' ? null : h('label', { class: 'correct', title: '標記為正確答案' },
             h('input', { type: multiCorrect ? 'checkbox' : 'radio', name: 'c' + i, checked: isC, onchange: upd((e) => {
               if (multiCorrect) {

@@ -8,7 +8,7 @@ const LIMITS = {
   description: 500,
   questions: 200,
   text: 300,
-  option: 120,
+  option: 250,
   accepted: 10,
   acceptedLen: 80,
   image: 3 * 1024 * 1024,

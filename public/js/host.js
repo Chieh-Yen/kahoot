@@ -36,9 +36,15 @@
   const DEFAULTS = {
     showOnDevice: true, autoEndWhenAllAnswered: true, streakBonus: true, allowLateJoin: true,
     shuffleQuestions: false, shuffleOptions: false, autoAdvance: false,
-    introSeconds: 4, autoAdvanceSeconds: 8, maxPlayers: 300,
+    introSeconds: 10, autoAdvanceSeconds: 8, maxPlayers: 300,
   };
   let settings = { ...DEFAULTS, ...storage.get('host-settings', {}) };
+  // The default preview time changed from 4 s to 10 s; upgrade browsers that saved the old default.
+  if (!storage.get('host-settings-v2') && settings.introSeconds === 4) {
+    settings.introSeconds = DEFAULTS.introSeconds;
+    storage.set('host-settings', settings);
+  }
+  storage.set('host-settings-v2', true);
 
   function later(ms, fn) {
     timeouts.push(setTimeout(fn, ms));
@@ -82,7 +88,15 @@
       muteBtn.textContent = Sound.muted ? '🔇' : '🔊';
     } }, Sound.muted ? '🔇' : '🔊');
     const fsBtn = h('button', { class: 'btn ghost sm', title: '全螢幕 (F)', onclick: toggleFullscreen }, '⛶');
-    document.body.append(h('div', { class: 'host-controls' }, buttons, muteBtn, fsBtn));
+    const musicLabel = () => (Sound.musicOff ? '🎵 音樂：關' : '🎵 音樂：開');
+    const musicBtn = h('button', { class: 'btn ghost sm music-btn', title: '背景音樂開關 (B)，音效不受影響', onclick: () => {
+      Sound.ensure();
+      Sound.setMusicOff(!Sound.musicOff);
+      musicBtn.textContent = musicLabel();
+      musicBtn.classList.toggle('off', Sound.musicOff);
+    } }, musicLabel());
+    musicBtn.classList.toggle('off', Sound.musicOff);
+    document.body.append(h('div', { class: 'host-controls' }, buttons, musicBtn, muteBtn, fsBtn));
   }
 
   function cornerPin() {
@@ -113,6 +127,7 @@
       primary();
     } else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
     else if (e.key === 'm' || e.key === 'M') $('.host-controls .btn[title^="靜音"]')?.click();
+    else if (e.key === 'b' || e.key === 'B') $('.host-controls .music-btn')?.click();
   });
 
   // ---------------- setup / login ----------------
@@ -274,6 +289,8 @@
 
   function leaveScreen() {
     K.applyTextSize(app, state && state.question);
+    // Question screens are exactly one viewport tall so images shrink to fit instead of pushing the tiles off.
+    app.classList.toggle('fit', !!state && ['intro', 'question', 'reveal'].includes(state.phase));
     countdown.stop();
     clearLater();
     ring = null;
@@ -352,12 +369,17 @@
     Sound.whoosh();
     const q = state.question;
     const bar = h('i');
-    setScreen(h('div', { class: 'intro' },
+    const head = [
       h('div', { class: 'num' }, `第 ${state.qIndex + 1} / ${state.total} 題 · ${TYPE_LABEL[q.type]}`),
       q.points === 'double' ? h('div', { class: 'pill', style: { background: 'var(--gold)', color: '#5a4200', padding: '8px 20px', borderRadius: '99px', fontWeight: 900, fontSize: '22px' } }, '⭐ 雙倍分數') : null,
-      h('div', { class: 'text pop' }, q.text),
-      h('div', { class: 'progress' }, bar)
-    ));
+    ];
+    // With an image (e.g. a case scenario), show it during the preview so players can read it first.
+    setScreen(q.image
+      ? h('div', { class: 'intro with-image' },
+        ...head,
+        h('div', { class: 'intro-body' }, h('img', { class: 'intro-img pop', src: q.image, alt: '' }), h('div', { class: 'text' }, q.text)),
+        h('div', { class: 'progress' }, bar))
+      : h('div', { class: 'intro' }, ...head, h('div', { class: 'text pop' }, q.text), h('div', { class: 'progress' }, bar)));
     const total = state.remainingMs;
     const t0 = performance.now();
     const step = () => {
@@ -538,51 +560,58 @@
   function renderPodium() {
     leaveScreen();
     Sound.stopMusic();
-    const top = state.ranking.slice(0, 3);
+    const N = K.PODIUM_PLACES;
+    const top = state.ranking.slice(0, N);
     const pod = (place) => {
       const p = top[place - 1];
       return h('div', { class: `pod p${place}`, id: 'pod' + place },
         h('div', { class: 'who' },
           place === 1 ? h('div', { class: 'crown' }, '👑') : null,
           p ? h('div', { class: 'av' }, p.avatar) : null,
-          p ? h('div', { class: 'nm' }, p.name) : h('div', { class: 'nm' }, '—'),
+          p ? h('div', { class: 'nm', title: p.name }, p.name) : h('div', { class: 'nm' }, '—'),
           p ? h('div', { class: 'sc' }, fmt(p.score) + ' 分') : null,
           p ? h('div', { class: 'cc' }, `答對 ${p.correctCount} / ${state.total} 題`) : null
         ),
-        h('div', { class: 'block' }, ['🥇', '🥈', '🥉'][place - 1])
+        h('div', { class: 'block' }, place <= 3 ? K.MEDALS[place - 1] : String(place))
       );
     };
     const actions = h('div', { class: 'podium-actions' },
       h('button', { class: 'btn light', onclick: next }, '📊 完整成績'),
       h('button', { class: 'btn ghost', onclick: () => renderPodium() }, '🔁 重播頒獎')
     );
+    // Stage order, left to right: 4 2 1 3 5
     setScreen(
       h('div', { class: 'spotlight' }),
       h('div', { class: 'podium-wrap' },
         h('div', { class: 'podium-title slide-up' }, '🏆 頒獎典禮'),
         h('div', { class: 'sub', style: { fontWeight: 800, opacity: 0.85 } }, state.title),
-        h('div', { class: 'podium' }, pod(2), pod(1), pod(3)),
+        h('div', { class: 'podium five' }, [4, 2, 1, 3, 5].map(pod)),
         actions
       )
     );
-    const reveal = (place, big) => {
+    const reveal = (place) => {
       const el = $('#pod' + place);
-      if (!el) return;
+      if (!el || !top[place - 1]) return; // fewer players than places: leave that pedestal down
       el.classList.add('raised');
       later(500, () => el.classList.add('show'));
-      if (big) {
+      if (place === 1) {
         Sound.cymbal();
         later(300, () => Sound.fanfare());
         later(400, () => confetti(9000, 260));
-      } else later(450, () => Sound.gong());
+      } else if (place <= 3) later(450, () => Sound.gong());
+      else later(450, () => Sound.pop());
     };
-    later(500, () => Sound.drumroll(1.6));
-    later(2100, () => reveal(3));
-    later(3200, () => Sound.drumroll(1.6));
-    later(4700, () => reveal(2));
-    later(5800, () => Sound.drumroll(2.6));
-    later(8500, () => reveal(1, true));
-    later(10500, () => {
+    const at = K.PODIUM_REVEAL_MS;
+    later(300, () => Sound.drumroll(1.1));
+    later(at[5], () => reveal(5));
+    later(at[4], () => reveal(4));
+    later(at[3] - 1300, () => Sound.drumroll(1.2));
+    later(at[3], () => reveal(3));
+    later(at[2] - 1700, () => Sound.drumroll(1.6));
+    later(at[2], () => reveal(2));
+    later(at[1] - 2700, () => Sound.drumroll(2.6));
+    later(at[1], () => reveal(1));
+    later(at[1] + 2000, () => {
       actions.classList.add('show');
       Sound.music('lobby');
     });
@@ -591,7 +620,7 @@
       // First press skips the animation, second goes to results.
       if (!actions.classList.contains('show')) {
         clearLater();
-        [3, 2, 1].forEach((p) => $('#pod' + p)?.classList.add('raised', 'show'));
+        for (let p = 1; p <= top.length; p++) $('#pod' + p)?.classList.add('raised', 'show');
         actions.classList.add('show');
       } else next();
     };
@@ -607,7 +636,7 @@
     const table = h('table', { class: 'rtable' },
       h('thead', null, h('tr', null, h('th', null, '#'), h('th', null, '玩家'), h('th', { style: { textAlign: 'right' } }, '分數'), h('th', { style: { textAlign: 'right' } }, '答對'), h('th', { style: { textAlign: 'right' } }, '最長連勝'))),
       h('tbody', null, ranking.map((p) => h('tr', null,
-        h('td', null, ['🥇', '🥈', '🥉'][p.rank - 1] || p.rank),
+        h('td', null, p.rank <= 3 ? K.MEDALS[p.rank - 1] : p.rank),
         h('td', null, p.avatar + ' ' + p.name),
         h('td', { class: 'num' }, fmt(p.score)),
         h('td', { class: 'num' }, `${p.correctCount}`),

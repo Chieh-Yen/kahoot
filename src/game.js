@@ -16,7 +16,7 @@ const DEFAULT_SETTINGS = {
   streakBonus: true,
   autoEndWhenAllAnswered: true,
   allowLateJoin: true,
-  introSeconds: 4,
+  introSeconds: 10,
   autoAdvance: false,
   autoAdvanceSeconds: 8,
   maxPlayers: 300,

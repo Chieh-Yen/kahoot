@@ -421,10 +421,11 @@
   function renderFinal() {
     window.__wantWake = false;
     const f = state.final || { rank: state.me.rank, score: state.me.score, correctCount: 0 };
-    const medal = ['🥇', '🥈', '🥉'][f.rank - 1];
-    const msg = f.rank === 1 ? '冠軍！太強了！' : f.rank === 2 ? '亞軍！超棒的！' : f.rank === 3 ? '季軍！很厲害！' : f.rank <= 10 ? '進入前十名！' : '感謝參與！';
-    // On the podium phase the host screen is still building suspense, so hold the medal briefly.
-    const delay = state.phase === 'podium' && f.rank <= 3 ? [9000, 5200, 2600][f.rank - 1] : 0;
+    const onStage = f.rank <= K.PODIUM_PLACES;
+    const medal = onStage ? K.MEDALS[f.rank - 1] : null;
+    const msg = ['冠軍！太強了！', '亞軍！超棒的！', '季軍！很厲害！', '第四名！上台領獎！', '第五名！上台領獎！'][f.rank - 1] || (f.rank <= 10 ? '進入前十名！' : '感謝參與！');
+    // While the big screen is still revealing places, hold the medal until this player's moment.
+    const delay = state.phase === 'podium' && onStage ? K.PODIUM_REVEAL_MS[f.rank] + 500 : 0;
     const finalBody = () => [
       medal ? h('div', { class: 'medal' }, medal) : h('div', { class: 'big-emoji pop' }, '🎉'),
       h('div', { class: 'rank-big pop' }, `第 ${f.rank} 名`),
@@ -440,11 +441,11 @@
         if (renderedKey !== key) return;
         setScreen(h('div', { class: 'center' }, finalBody()), bottomBar());
         confetti(5000);
-        Sound.fanfare();
+        f.rank <= 3 ? Sound.fanfare() : Sound.correct();
       }, delay);
     } else {
       setScreen(h('div', { class: 'center' }, finalBody()), bottomBar());
-      if (f.rank <= 3) confetti(5000);
+      if (onStage) confetti(5000);
     }
   }
 })();

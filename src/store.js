@@ -73,7 +73,32 @@ class Store {
     const f = this.file(id);
     if (!f || !fs.existsSync(f)) return false;
     fs.unlinkSync(f);
+    this.addTombstone(id);
     return true;
+  }
+
+  // Tombstones (data/deleted.json, committed with the quizzes) stop browser-side backups from
+  // resurrecting a quiz that was deleted on purpose.
+  tombstoneFile() {
+    return path.join(path.dirname(this.quizDir), 'deleted.json');
+  }
+
+  tombstones() {
+    try {
+      return new Set(JSON.parse(fs.readFileSync(this.tombstoneFile(), 'utf8')));
+    } catch {
+      return new Set();
+    }
+  }
+
+  addTombstone(id) {
+    const t = this.tombstones();
+    t.add(id);
+    fs.writeFileSync(this.tombstoneFile(), JSON.stringify([...t].sort(), null, 2) + '\n');
+  }
+
+  isDeleted(id) {
+    return this.tombstones().has(id);
   }
 
   saveResults(results) {

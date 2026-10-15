@@ -25,6 +25,35 @@ const GAME_IDLE_MS = 6 * 60 * 60 * 1000;
 const ENDED_GAME_TTL_MS = 2 * 60 * 60 * 1000;
 
 const store = new Store(DATA_DIR, path.join(__dirname, 'samples'));
+
+// ---------- media ----------
+// Quiz images are stored inline as data: URLs. For a game they are served from a content-addressed
+// URL instead, so the host browser downloads each image once (identical images are shared) and
+// frequent host:state updates stay small.
+const media = new Map(); // hash -> { type, buf }
+
+function mediaUrl(dataUrl) {
+  const m = /^data:(image\/[a-z0-9.+-]+);base64,(.*)$/i.exec(dataUrl);
+  if (!m) return dataUrl; // http(s) URLs are used as-is
+  const buf = Buffer.from(m[2], 'base64');
+  const hash = crypto.createHash('sha1').update(buf).digest('hex').slice(0, 20);
+  if (!media.has(hash)) media.set(hash, { type: m[1].toLowerCase(), buf });
+  return '/media/' + hash;
+}
+
+function withMediaUrls(quiz) {
+  return { ...quiz, questions: quiz.questions.map((q) => (q.image ? { ...q, image: mediaUrl(q.image) } : q)) };
+}
+
+function findMedia(hash) {
+  if (media.has(hash)) return media.get(hash);
+  // After a restart the cache is empty; rebuild it from the stored quizzes.
+  for (const { id } of store.listQuizzes()) {
+    const q = store.getQuiz(id);
+    for (const x of (q && q.questions) || []) if (x.image) mediaUrl(x.image);
+  }
+  return media.get(hash) || null;
+}
 const games = new Map(); // pin -> Game
 
 // ---------- helpers ----------
@@ -116,6 +145,13 @@ app.get('/healthz', (req, res) => {
   });
 });
 
+app.get('/media/:hash', (req, res) => {
+  const m = /^[0-9a-f]{20}$/.test(req.params.hash) && findMedia(req.params.hash);
+  if (!m) return res.status(404).end();
+  res.type(m.type).setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.send(m.buf);
+});
+
 app.get('/api/info', (req, res) => {
   res.json({
     needPassword: !!HOST_PASSWORD || PASSWORD_MISSING,
@@ -174,6 +210,7 @@ app.post('/api/quizzes/restore', requireHost, (req, res) => {
   if (!store.file(id)) return res.status(400).json({ error: 'bad id' });
   const { quiz, errors } = normalizeQuiz(body);
   if (errors.length) return res.status(400).json({ error: errors[0], errors });
+  if (store.isDeleted(id)) return res.json({ ok: true, restored: false, deleted: true });
   const updatedAt = typeof body.updatedAt === 'string' && !isNaN(Date.parse(body.updatedAt)) ? body.updatedAt : null;
   const existing = store.getQuiz(id);
   if (existing && (!updatedAt || String(existing.updatedAt) >= updatedAt)) return res.json({ ok: true, restored: false });
@@ -259,7 +296,7 @@ io.on('connection', (socket) => {
     const pin = newPin();
     const game = new Game({
       pin,
-      quiz,
+      quiz: withMediaUrls(quiz),
       settings: msg.settings,
       transport,
       onFinish: (results) => store.saveResults(results),

@@ -94,6 +94,7 @@
     ctx: null,
     master: null,
     muted: storage.get('muted', false),
+    musicOff: storage.get('music-off', false), // background music only; sound effects keep playing
     musicTimer: null,
     musicKind: null,
 
@@ -230,6 +231,12 @@
       const schedule = () => {
         while (next < ctx.currentTime + 0.25) {
           const at = next - ctx.currentTime;
+          if (this.musicOff) {
+            // Keep the sequencer running silently so music resumes in time when switched back on.
+            next += step;
+            i++;
+            continue;
+          }
           const b = song.bass[i % 16];
           const l = song.lead[i % 16];
           if (b) this.tone(b, at, step * 0.9, 'triangle', 0.12);
@@ -241,6 +248,10 @@
       };
       schedule();
       this.musicTimer = setInterval(schedule, 60);
+    },
+    setMusicOff(off) {
+      this.musicOff = off;
+      storage.set('music-off', off);
     },
     stopMusic() {
       clearInterval(this.musicTimer);
@@ -409,7 +420,9 @@
             headers: { 'Content-Type': 'application/json', 'x-host-password': password || '' },
             body: JSON.stringify(doc),
           });
-          if (r.ok && (await r.json()).restored) n++;
+          const res = r.ok ? await r.json() : {};
+          if (res.restored) n++;
+          if (res.deleted) await this.remove(doc.id); // deleted on purpose; drop the stale backup
         } catch {}
       }
       return n;
@@ -436,8 +449,14 @@
     el.classList.toggle('xlong', s === 'xlong');
   }
 
+  // Award ceremony: when each place (5th..1st) is revealed on the big screen, in ms after the podium
+  // phase starts. Phones use the same table so a player's medal appears together with the host screen.
+  const PODIUM_PLACES = 5;
+  const PODIUM_REVEAL_MS = { 5: 1500, 4: 2800, 3: 5000, 2: 7700, 1: 11000 };
+  const MEDALS = ['🥇', '🥈', '🥉', '🏅', '🏅'];
+
   const TYPE_LABEL = { quiz: '單選題', multi: '複選題', tf: '是非題', text: '填空題', poll: '投票' };
   const AVATARS = ['🦊', '🐼', '🐸', '🐵', '🦁', '🐯', '🐨', '🐙', '🦄', '🐧', '🐳', '🦖', '🐝', '🦉', '🐹', '🐰', '🐶', '🐱', '🦋', '🐢', '🦀', '🐲', '🦜', '🐮'];
 
-  window.K = { applyTextSize, QuizBackup, keepServerAwake, $, $$, h, shape, storage, toast, fmt, emit, connBanner, Sound, confetti, Countdown, timerRing, keepAwake, TYPE_LABEL, AVATARS };
+  window.K = { PODIUM_PLACES, PODIUM_REVEAL_MS, MEDALS, applyTextSize, QuizBackup, keepServerAwake, $, $$, h, shape, storage, toast, fmt, emit, connBanner, Sound, confetti, Countdown, timerRing, keepAwake, TYPE_LABEL, AVATARS };
 })();

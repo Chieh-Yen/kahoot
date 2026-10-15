@@ -1,0 +1,7 @@
+node_modules/
+# Quizzes in data/quizzes/ are committed on purpose: on Render's free plan the disk is wiped on
+# every restart, so whatever is in git is what the server starts with.
+data/results/
+*.tmp
+*.log
+.DS_Store
